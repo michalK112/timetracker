@@ -65,32 +65,53 @@ struct StatusTag: View {
     }
 }
 
-/// Edytor listy słów kluczowych: chipy + pole „wpisz i Enter”.
+/// Edytor listy słów kluczowych: chipy z usuwaniem + pole z przyciskiem „Dodaj”.
+/// Można wpisać kilka słów naraz, oddzielając je przecinkami; Enter też dodaje.
 struct KeywordEditor: View {
     @Binding var words: [String]
     var placeholder: String
     @State private var draft = ""
+    @FocusState private var focused: Bool
 
     var body: some View {
-        FlowLayout(spacing: 6) {
-            ForEach(Array(words.enumerated()), id: \.offset) { i, w in
-                HStack(spacing: 3) {
-                    Text(w).lineLimit(1)
-                    Button { words.remove(at: i) } label: { Image(systemName: "xmark").font(.system(size: 9, weight: .bold)) }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(.secondary)
-                        .help("Usuń „\(w)”")
+        VStack(alignment: .leading, spacing: 8) {
+            if !words.isEmpty {
+                FlowLayout(spacing: 6) {
+                    ForEach(Array(words.enumerated()), id: \.offset) { i, w in
+                        HStack(spacing: 4) {
+                            Text(w).lineLimit(1)
+                            Button { words.remove(at: i) } label: {
+                                Image(systemName: "xmark.circle.fill").font(.system(size: 11))
+                            }
+                            .buttonStyle(.plain)
+                            .foregroundStyle(.secondary)
+                            .help("Usuń „\(w)”")
+                        }
+                        .font(.system(size: 12.5))
+                        .padding(.leading, 9).padding(.trailing, 6)
+                        .frame(height: 24)
+                        .background(Color.accentColor.opacity(0.12), in: Capsule())
+                    }
                 }
-                .font(.system(size: 12.5))
-                .padding(.leading, 8).padding(.trailing, 6)
-                .frame(height: 24)
-                .background(Color.primary.opacity(0.08), in: RoundedRectangle(cornerRadius: 6))
             }
-            TextField(placeholder, text: $draft)
-                .textFieldStyle(.plain)
-                .font(.system(size: 12.5))
-                .frame(minWidth: 220)
-                .onSubmit(add)
+            HStack(spacing: 6) {
+                TextField("Słowo kluczowe", text: $draft, prompt: Text(placeholder))
+                    .labelsHidden()
+                    .textFieldStyle(.roundedBorder)
+                    .focused($focused)
+                    .onSubmit { add(); focused = true }
+                Button {
+                    add()
+                    focused = true
+                } label: {
+                    Label("Dodaj", systemImage: "plus")
+                }
+                .disabled(draft.trimmed.isEmpty)
+            }
+            if words.isEmpty {
+                Text("Brak słów kluczowych — wpisz słowo i kliknij Dodaj (kilka naraz oddziel przecinkami).")
+                    .font(.caption).foregroundStyle(.tertiary)
+            }
         }
     }
 

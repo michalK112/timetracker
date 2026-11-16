@@ -18,9 +18,16 @@ struct ProjectsView: View {
                 ForEach(store.projects) { p in
                     HStack(spacing: 12) {
                         IconTile(symbol: "folder.fill", color: p.color)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(p.name)
                             Text(p.summary).font(.caption).foregroundStyle(.secondary)
+                            let words = p.keywords + p.tools.flatMap { $0.keywords }
+                            if !words.isEmpty {
+                                Text(words.prefix(6).joined(separator: " · ") + (words.count > 6 ? " …" : ""))
+                                    .font(.caption).foregroundStyle(.tertiary).lineLimit(1)
+                            } else {
+                                Text("Brak słów kluczowych — kliknij, żeby dodać").font(.caption).foregroundStyle(.orange)
+                            }
                         }
                         Spacer()
                         Toggle("", isOn: Binding(get: { p.enabled }, set: { v in var q = p; q.enabled = v; store.update(q) }))
@@ -93,6 +100,14 @@ struct ProjectDetail: View {
             }
 
             Section {
+                KeywordEditor(words: project.keywords, placeholder: "Np. Shape Factor, shapefactor.com")
+            } header: {
+                Text("Słowa kluczowe")
+            } footer: {
+                Text("Szukane w tytułach okien i adresach stron we wszystkich aplikacjach. Wielkość liter nie ma znaczenia.").foregroundStyle(.secondary)
+            }
+
+            Section {
                 ForEach(p.tools) { rule in
                     ToolRuleRow(rule: toolBinding(rule.id)) {
                         project.wrappedValue.tools.removeAll { $0.id == rule.id }
@@ -114,13 +129,6 @@ struct ProjectDetail: View {
                 Text("Bez słów kluczowych cały czas w danym narzędziu liczy się do projektu — dobre dla aplikacji używanych tylko dla tego klienta.").foregroundStyle(.secondary)
             }
 
-            Section {
-                KeywordEditor(words: project.keywords, placeholder: "Np. Shape Factor, shapefactor.com + Enter")
-            } header: {
-                Text("Słowa kluczowe ogólne")
-            } footer: {
-                Text("Wielkość liter nie ma znaczenia. Szukane w tytułach okien i adresach stron we wszystkich aplikacjach.").foregroundStyle(.secondary)
-            }
 
             Section {
                 HStack {
@@ -170,7 +178,7 @@ struct ToolRuleRow: View {
                 Text((rule.type.apps.isEmpty ? "" : rule.type.apps + " · ") +
                      (rule.keywords.isEmpty ? "bez słów kluczowych liczy się cały czas w tej aplikacji" : "liczy się tylko przy pasujących słowach"))
                     .font(.caption).foregroundStyle(.secondary)
-                KeywordEditor(words: $rule.keywords, placeholder: rule.type.hint + " + Enter")
+                KeywordEditor(words: $rule.keywords, placeholder: rule.type.hint)
             }
             Spacer(minLength: 0)
             Button("Usuń", role: .destructive, action: onDelete).buttonStyle(.borderless).font(.caption)

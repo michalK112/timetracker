@@ -46,7 +46,7 @@ enum Pane: String, Hashable {
 }
 
 /// Numer wersji pokazywany w panelu bocznym — pozwala sprawdzić, czy działa najnowsza kompilacja.
-let APP_BUILD = "2.0 · build 4"
+let APP_BUILD = "2.0 · build 5"
 
 /// Główne okno: własny panel boczny (przyciski) + widok sekcji.
 /// Bez NavigationSplitView i zaznaczania List — w poprzednich wersjach kliknięcia nie przełączały widoku.
