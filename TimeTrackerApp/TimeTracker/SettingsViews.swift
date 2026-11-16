@@ -129,6 +129,7 @@ struct AISettingsView: View {
 
 struct SystemSettingsView: View {
     @EnvironmentObject var tracker: Tracker
+    @EnvironmentObject var updater: Updater
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var loginError: String?
 
@@ -171,6 +172,30 @@ struct SystemSettingsView: View {
                         Button("Wstrzymaj do jutra") { tracker.pause(until: Calendar.current.startOfDay(for: Date().addingTimeInterval(86400))) }
                     }
                 }
+            }
+            Section {
+                LabeledContent("Zainstalowana wersja") {
+                    Text("\(APP_BUILD)" + (updater.installed.map { " · \($0.prefix(7))" } ?? "")).foregroundStyle(.secondary)
+                }
+                LabeledContent("Na GitHubie") {
+                    if updater.checking {
+                        ProgressView().controlSize(.small)
+                    } else if let l = updater.latest {
+                        Text(updater.updateAvailable ? "nowsza wersja \(l.prefix(7))" : "masz najnowszą wersję")
+                            .foregroundStyle(updater.updateAvailable ? Color.orange : Color.secondary)
+                    } else {
+                        Text(updater.error ?? "—").foregroundStyle(.secondary)
+                    }
+                }
+                HStack {
+                    Button("Sprawdź aktualizacje") { Task { await updater.check() } }
+                        .disabled(updater.checking)
+                    Button("Zainstaluj najnowszą wersję") { updater.install() }
+                        .disabled(updater.latest == nil)
+                }
+            } header: { Text("Aktualizacje") } footer: {
+                Text("Aktualizacja otwiera Terminal, pobiera kod z GitHuba, kompiluje aplikację i uruchamia ją ponownie. Twoje dane zostają bez zmian. Sprawdzanie odbywa się co 6 godzin.")
+                    .foregroundStyle(.secondary)
             }
             Section("Dane") {
                 LabeledContent("Folder") { Text("Dokumenty/TimeTracker").foregroundStyle(.secondary) }

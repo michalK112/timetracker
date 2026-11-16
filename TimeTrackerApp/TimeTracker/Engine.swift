@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import UserNotifications
 import Combine
 
@@ -231,4 +232,86 @@ enum Notifier {
         c.sound = .default
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: UUID().uuidString, content: c, trigger: nil))
     }
+}
+
+// MARK: - Aktualizacje z GitHuba
+
+/// Sprawdza, czy na GitHubie jest nowsza wersja, i uruchamia aktualizację w Terminalu.
+/// Zainstalowana wersja (SHA commita) jest zapisywana przez update.sh w data/installed_commit.
+@MainActor
+final class Updater: ObservableObject {
+    static let repo = "michalK112/timetracker"
+    static let updateCommand = "curl -fsSL https://raw.githubusercontent.com/\(repo)/main/TimeTrackerApp/update.sh | bash"
+
+    @Published private(set) var installed: String?
+    @Published private(set) var latest: String?
+    @Published private(set) var checking = false
+    @Published private(set) var lastCheck: Date?
+    @Published private(set) var error: String?
+    private var timer: Timer?
+    private var notifiedFor: String?
+
+    private var stateURL: URL { Paths.data.appendingPathComponent("installed_commit") }
+
+    /// nowsza wersja jest dostępna (gdy nie wiemy, co jest zainstalowane, też proponujemy aktualizację)
+    var updateAvailable: Bool {
+        guard let latest = latest else { return false }
+        return installed != latest
+    }
+
+    func start() {
+        guard timer == nil else { return }
+        Task { await check() }
+        timer = Timer.scheduledTimer(withTimeInterval: 6 * 3600, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.check() }
+        }
+    }
+
+    func check() async {
+        installed = (try? String(contentsOf: stateURL, encoding: .utf8))?.trimmed.nilIfEmpty
+        checking = true
+        defer { checking = false; lastCheck = Date() }
+        var req = URLRequest(url: URL(string: "https://api.github.com/repos/\(Updater.repo)/commits/main")!)
+        req.setValue("application/vnd.github.sha", forHTTPHeaderField: "Accept")
+        req.setValue("TimeTracker-macOS", forHTTPHeaderField: "User-Agent")
+        req.timeoutInterval = 20
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+            guard code == 200, let sha = String(data: data, encoding: .utf8)?.trimmed, sha.count >= 7 else {
+                error = code == 404 ? "Repozytorium jest prywatne albo niedostępne." : "GitHub odpowiedział kodem \(code)."
+                return
+            }
+            latest = sha
+            error = nil
+            if updateAvailable, installed != nil, notifiedFor != sha {
+                notifiedFor = sha
+                Notifier.send(title: "Dostępna aktualizacja TimeTrackera", body: "Zainstaluj ją z menu zegara w pasku menu.")
+            }
+        } catch {
+            self.error = "Brak połączenia z GitHubem."
+        }
+    }
+
+    /// Otwiera Terminal z komendą aktualizacji (pobranie, kompilacja, ponowne uruchomienie).
+    func install() {
+        let script = """
+        #!/bin/bash
+        \(Updater.updateCommand)
+        echo
+        read -n 1 -s -r -p "Naciśnij dowolny klawisz, aby zamknąć okno…"
+        """
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("timetracker-update.command")
+        do {
+            try script.write(to: url, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
+            NSWorkspace.shared.open(url)
+        } catch {
+            self.error = "Nie udało się uruchomić aktualizacji: \(error.localizedDescription)"
+        }
+    }
+}
+
+extension String {
+    var nilIfEmpty: String? { isEmpty ? nil : self }
 }
