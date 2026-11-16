@@ -45,67 +45,106 @@ enum Pane: String, Hashable {
     case calendar, projects, reports, general, ai, system
 }
 
+/// Numer wersji pokazywany w panelu bocznym — pozwala sprawdzić, czy działa najnowsza kompilacja.
+let APP_BUILD = "2.0 · build 3"
+
+/// Główne okno: własny panel boczny (przyciski) + widok sekcji.
+/// Bez NavigationSplitView i zaznaczania List — w poprzednich wersjach kliknięcia nie przełączały widoku.
 struct RootView: View {
-    @State private var pane: Pane? = .calendar
+    @State private var pane: Pane = .calendar
     @State private var selectedProject: String?
     @EnvironmentObject var tracker: Tracker
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                Section("Śledzenie") {
-                    row(.calendar, "Kalendarz", "calendar", "#2f8cf0")
-                    row(.projects, "Projekty", "folder.fill", "#e0457b")
-                    row(.reports, "Raporty", "chart.bar.fill", "#c64fd6")
-                }
-                Section("Ustawienia") {
-                    row(.general, "Ogólne", "gearshape.fill", "#8e8e96")
-                    row(.ai, "AI", "sparkles", "#8e5cf0")
-                    row(.system, "System", "lock.shield.fill", "#e8a321")
+        HStack(spacing: 0) {
+            sidebar
+                .frame(width: 230)
+                .background(.regularMaterial)
+            Divider()
+            NavigationStack {
+                detail
+            }
+            .id(pane)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    @ViewBuilder private var detail: some View {
+        switch pane {
+        case .calendar: CalendarView()
+        case .projects: ProjectsView(selected: $selectedProject)
+        case .reports: ReportsView()
+        case .general: GeneralSettingsView()
+        case .ai: AISettingsView()
+        case .system: SystemSettingsView()
+        }
+    }
+
+    private var sidebar: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 10) {
+                IconTile(symbol: "clock.fill", color: Color(hex: "#e0457b"), size: 30)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("TimeTracker").font(.system(size: 14, weight: .semibold))
+                    Text("MK Design Studio").font(.system(size: 11)).foregroundStyle(.secondary)
                 }
             }
-            .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 200, ideal: 230)
-            .safeAreaInset(edge: .bottom) {
+            .padding(.horizontal, 10)
+            .padding(.top, 14)
+            .padding(.bottom, 14)
+
+            sectionLabel("Śledzenie")
+            row(.calendar, "Kalendarz", "calendar", "#2f8cf0")
+            row(.projects, "Projekty", "folder.fill", "#e0457b")
+            row(.reports, "Raporty", "chart.bar.fill", "#c64fd6")
+            sectionLabel("Ustawienia").padding(.top, 14)
+            row(.general, "Ogólne", "gearshape.fill", "#8e8e96")
+            row(.ai, "AI", "sparkles", "#8e5cf0")
+            row(.system, "System", "lock.shield.fill", "#e8a321")
+
+            Spacer(minLength: 0)
+
+            VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Circle().fill(tracker.isPaused ? Color.orange : Color.green).frame(width: 7, height: 7)
                     Text(tracker.isPaused ? "Wstrzymane" : "Śledzenie · \(fmtDuration(tracker.activeTodaySeconds / 60))")
                         .font(.caption).foregroundStyle(.secondary)
-                    Spacer()
                 }
-                .padding(12)
+                Text(APP_BUILD).font(.system(size: 10)).foregroundStyle(.tertiary)
             }
-        } detail: {
-            NavigationStack {
-                switch pane ?? .calendar {
-                case .calendar: CalendarView()
-                case .projects: ProjectsView(selected: $selectedProject)
-                case .reports: ReportsView()
-                case .general: GeneralSettingsView()
-                case .ai: AISettingsView()
-                case .system: SystemSettingsView()
-                }
-            }
-            .id(pane)   // wymusza przebudowę widoku po zmianie sekcji (błąd NavigationSplitView w macOS 13–14)
+            .padding(10)
         }
-        .onChange(of: pane) { _ in selectedProject = nil }
+        .padding(.horizontal, 10)
+        .padding(.bottom, 6)
+        .frame(maxHeight: .infinity, alignment: .top)
     }
 
-    /// Wiersz panelu bocznego jako przycisk — działa niezależnie od zaznaczenia List.
+    private func sectionLabel(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 4)
+    }
+
     private func row(_ p: Pane, _ title: String, _ symbol: String, _ hex: String) -> some View {
-        let selected = (pane ?? .calendar) == p
-        return Button { pane = p } label: {
-            Label { Text(title) } icon: { IconTile(symbol: symbol, color: Color(hex: hex)) }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.vertical, 3)
-                .contentShape(Rectangle())
+        let selected = pane == p
+        return Button {
+            pane = p
+            selectedProject = nil
+        } label: {
+            HStack(spacing: 10) {
+                IconTile(symbol: symbol, color: Color(hex: hex))
+                Text(title).font(.system(size: 13))
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .background(selected ? Color.primary.opacity(0.1) : Color.clear,
+                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .listRowBackground(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(selected ? Color.primary.opacity(0.1) : Color.clear)
-                .padding(.horizontal, 10)
-        )
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
