@@ -21,7 +21,7 @@ struct ReportsView: View {
                         DayBar(entries: live)
                     }
                     .padding(.vertical, 4)
-                    .tag(key as String?)
+                    .tag(key)
                 }
             }
             .frame(width: 300)

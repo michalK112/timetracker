@@ -90,7 +90,7 @@ struct RootView: View {
 
     private func row(_ p: Pane, _ title: String, _ symbol: String, _ hex: String) -> some View {
         Label { Text(title) } icon: { IconTile(symbol: symbol, color: Color(hex: hex)) }
-            .tag(p as Pane?)
+            .tag(p)
     }
 }
 
