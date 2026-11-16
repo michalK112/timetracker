@@ -8,26 +8,34 @@ struct ReportsView: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            List(selection: $selected) {
+            List {
                 ForEach(store.savedDayKeys(), id: \.self) { key in
                     let rec = store.day(key)
                     let live = rec.entries.filter { $0.status != .rejected && $0.projectId != nil }
-                    VStack(alignment: .leading, spacing: 5) {
-                        HStack {
-                            Text(longDay(dateFromKey(key)))
-                            Spacer()
-                            Text("\(fmtHours(live.reduce(0) { $0 + $1.effectiveMinutes })) h").monospacedDigit().foregroundStyle(.secondary)
+                    Button { selected = key } label: {
+                        VStack(alignment: .leading, spacing: 5) {
+                            HStack {
+                                Text(longDay(dateFromKey(key)))
+                                Spacer()
+                                Text("\(fmtHours(live.reduce(0) { $0 + $1.effectiveMinutes })) h").monospacedDigit().foregroundStyle(.secondary)
+                            }
+                            DayBar(entries: live)
                         }
-                        DayBar(entries: live)
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle())
                     }
-                    .padding(.vertical, 4)
-                    .tag(key)
+                    .buttonStyle(.plain)
+                    .listRowBackground(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(selected == key ? Color.primary.opacity(0.1) : Color.clear)
+                            .padding(.horizontal, 6)
+                    )
                 }
             }
             .frame(width: 300)
             Divider()
             if let key = selected {
-                ReportDetail(key: key)
+                ReportDetail(key: key).id(key)
             } else {
                 VStack(spacing: 6) {
                     Text("Wybierz dzień").font(.headline)

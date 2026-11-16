@@ -52,7 +52,7 @@ struct RootView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(selection: $pane) {
+            List {
                 Section("Śledzenie") {
                     row(.calendar, "Kalendarz", "calendar", "#2f8cf0")
                     row(.projects, "Projekty", "folder.fill", "#e0457b")
@@ -76,21 +76,37 @@ struct RootView: View {
                 .padding(12)
             }
         } detail: {
-            switch pane ?? .calendar {
-            case .calendar: CalendarView()
-            case .projects: ProjectsView(selected: $selectedProject)
-            case .reports: ReportsView()
-            case .general: GeneralSettingsView()
-            case .ai: AISettingsView()
-            case .system: SystemSettingsView()
+            NavigationStack {
+                switch pane ?? .calendar {
+                case .calendar: CalendarView()
+                case .projects: ProjectsView(selected: $selectedProject)
+                case .reports: ReportsView()
+                case .general: GeneralSettingsView()
+                case .ai: AISettingsView()
+                case .system: SystemSettingsView()
+                }
             }
+            .id(pane)   // wymusza przebudowę widoku po zmianie sekcji (błąd NavigationSplitView w macOS 13–14)
         }
         .onChange(of: pane) { _ in selectedProject = nil }
     }
 
+    /// Wiersz panelu bocznego jako przycisk — działa niezależnie od zaznaczenia List.
     private func row(_ p: Pane, _ title: String, _ symbol: String, _ hex: String) -> some View {
-        Label { Text(title) } icon: { IconTile(symbol: symbol, color: Color(hex: hex)) }
-            .tag(p)
+        let selected = (pane ?? .calendar) == p
+        return Button { pane = p } label: {
+            Label { Text(title) } icon: { IconTile(symbol: symbol, color: Color(hex: hex)) }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 3)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(selected ? Color.primary.opacity(0.1) : Color.clear)
+                .padding(.horizontal, 10)
+        )
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
