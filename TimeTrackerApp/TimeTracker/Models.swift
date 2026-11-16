@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Narzędzia
 
 enum ToolType: String, Codable, CaseIterable, Identifiable {
-    case slack, figma, browser, invoices, mail, meet, code, framer, notion, terminal, custom
+    case slack, figma, browser, ai, invoices, mail, meet, code, framer, notion, terminal, custom
     var id: String { rawValue }
 
     var label: String {
@@ -11,6 +11,7 @@ enum ToolType: String, Codable, CaseIterable, Identifiable {
         case .slack: return "Slack"
         case .figma: return "Figma"
         case .browser: return "Przeglądarka"
+        case .ai: return "Asystenci AI"
         case .invoices: return "Faktury"
         case .mail: return "Poczta"
         case .meet: return "Spotkania"
@@ -26,6 +27,7 @@ enum ToolType: String, Codable, CaseIterable, Identifiable {
         case .slack: return "bubble.left.and.bubble.right.fill"
         case .figma: return "pencil.tip"
         case .browser: return "globe"
+        case .ai: return "sparkles"
         case .invoices: return "doc.text.fill"
         case .mail: return "envelope.fill"
         case .meet: return "video.fill"
@@ -41,6 +43,7 @@ enum ToolType: String, Codable, CaseIterable, Identifiable {
         case .slack: return Color(hex: "#c2457e")
         case .figma: return Color(hex: "#f0663a")
         case .browser: return Color(hex: "#2f8cf0")
+        case .ai: return Color(hex: "#d97757")
         case .invoices: return Color(hex: "#32b45a")
         case .mail: return Color(hex: "#3a7bf0")
         case .meet: return Color(hex: "#18a999")
@@ -57,9 +60,10 @@ enum ToolType: String, Codable, CaseIterable, Identifiable {
         case .slack: return ["slack"]
         case .figma: return ["figma"]
         case .browser: return ToolType.browsers
+        case .ai: return ["claude", "chatgpt", "cursor", "windsurf", "perplexity", "copilot", "gemini", "lm studio", "ollama"]
         case .mail: return ["mail", "poczta", "microsoft outlook", "outlook", "spark", "airmail", "mimestream"]
         case .meet: return ["zoom.us", "zoom", "microsoft teams", "teams", "facetime", "webex"]
-        case .code: return ["code", "visual studio code", "cursor", "zed", "webstorm", "xcode", "sublime text", "nova", "windsurf"]
+        case .code: return ["code", "visual studio code", "zed", "webstorm", "xcode", "sublime text", "nova"]
         case .framer: return ["framer"]
         case .notion: return ["notion"]
         case .terminal: return ["terminal", "iterm2", "warp", "ghostty", "alacritty", "kitty"]
@@ -69,6 +73,8 @@ enum ToolType: String, Codable, CaseIterable, Identifiable {
     /// fragmenty adresów, po których narzędzie działające w przeglądarce jest rozpoznawane
     var webDomains: [String] {
         switch self {
+        case .ai: return ["claude.ai", "chatgpt.com", "chat.openai.com", "gemini.google.com", "perplexity.ai", "v0.dev", "v0.app",
+                          "lovable.dev", "bolt.new", "copilot.microsoft.com", "aistudio.google.com", "console.anthropic.com"]
         case .invoices: return ["fakturownia", "infakt", "wfirma", "ifirma", "saldeo", "faktura"]
         case .mail: return ["mail.google.com", "outlook.live.com", "outlook.office"]
         case .meet: return ["meet.google.com", "zoom.us/", "teams.microsoft.com"]
@@ -82,10 +88,11 @@ enum ToolType: String, Codable, CaseIterable, Identifiable {
     var apps: String {
         switch self {
         case .browser: return "Chrome, Safari, Arc, Edge"
+        case .ai: return "Claude, ChatGPT, Cursor, Perplexity, Gemini, v0, Lovable"
         case .invoices: return "Fakturownia, inFakt, wFirma, iFirma"
         case .mail: return "Mail, Gmail, Outlook"
         case .meet: return "Zoom, Meet, Teams"
-        case .code: return "VS Code, Cursor, Zed, Xcode"
+        case .code: return "VS Code, Zed, Xcode"
         case .terminal: return "Terminal, iTerm, Warp"
         default: return ""
         }
@@ -95,6 +102,7 @@ enum ToolType: String, Codable, CaseIterable, Identifiable {
         case .slack: return "Kanał lub rozmowa, np. shape-factor"
         case .figma: return "Nazwa pliku lub zespołu"
         case .browser: return "Domena lub fragment tytułu strony"
+        case .ai: return "Nazwa rozmowy, projektu lub repozytorium, np. Fliko"
         case .invoices: return "Nazwa kontrahenta na fakturze"
         case .mail: return "Nadawca, domena lub temat"
         case .meet: return "Nazwa spotkania"
@@ -117,7 +125,7 @@ enum ToolType: String, Codable, CaseIterable, Identifiable {
     static func detect(app: String, url: String, title: String) -> ToolType {
         let t = (title + " " + url).lowercased()
         if ToolType.browser.matchesApp(app) {
-            for type in [ToolType.invoices, .mail, .meet, .figma, .slack, .notion, .framer] where type.webDomains.contains(where: { t.contains($0) }) {
+            for type in [ToolType.ai, .invoices, .mail, .meet, .figma, .slack, .notion, .framer] where type.webDomains.contains(where: { t.contains($0) }) {
                 return type
             }
         }
