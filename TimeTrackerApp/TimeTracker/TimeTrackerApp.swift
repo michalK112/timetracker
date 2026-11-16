@@ -46,7 +46,7 @@ enum Pane: String, Hashable {
 }
 
 /// Numer wersji pokazywany w panelu bocznym — pozwala sprawdzić, czy działa najnowsza kompilacja.
-let APP_BUILD = "2.0 · build 3"
+let APP_BUILD = "2.0 · build 4"
 
 /// Główne okno: własny panel boczny (przyciski) + widok sekcji.
 /// Bez NavigationSplitView i zaznaczania List — w poprzednich wersjach kliknięcia nie przełączały widoku.
@@ -128,24 +128,51 @@ struct RootView: View {
     }
 
     private func row(_ p: Pane, _ title: String, _ symbol: String, _ hex: String) -> some View {
-        let selected = pane == p
-        return Button {
+        SidebarRow(title: title, symbol: symbol, color: Color(hex: hex), selected: pane == p) {
             pane = p
             selectedProject = nil
-        } label: {
+        }
+    }
+}
+
+/// Pozycja panelu bocznego ze stanami: zwykły, hover, wybrany.
+struct SidebarRow: View {
+    let title: String
+    let symbol: String
+    let color: Color
+    let selected: Bool
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
             HStack(spacing: 10) {
-                IconTile(symbol: symbol, color: Color(hex: hex))
-                Text(title).font(.system(size: 13))
+                IconTile(symbol: symbol, color: color)
+                Text(title)
+                    .font(.system(size: 13, weight: selected ? .semibold : .regular))
+                    .foregroundStyle(selected ? Color.primary : Color.primary.opacity(0.85))
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
-            .background(selected ? Color.primary.opacity(0.1) : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .background(background, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(selected ? Color.accentColor.opacity(0.35) : Color.clear, lineWidth: 1)
+            )
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.12), value: hovering)
+        .animation(.easeOut(duration: 0.12), value: selected)
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private var background: Color {
+        if selected { return Color.accentColor.opacity(hovering ? 0.24 : 0.18) }
+        if hovering { return Color.primary.opacity(0.07) }
+        return .clear
     }
 }
 
