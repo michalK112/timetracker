@@ -1,0 +1,17 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcuserdata/
+
+# Dane użytkownika — nigdy do repozytorium
+exports/
+data/
+reports/
+logs/
+config/
+summaries/
