@@ -6,6 +6,7 @@ struct TimeTrackerApp: App {
     @StateObject private var store: Store
     @StateObject private var tracker: Tracker
     @StateObject private var engine: Engine
+    @StateObject private var updater = Updater()
 
     init() {
         let s = Store()
@@ -26,7 +27,9 @@ struct TimeTrackerApp: App {
                 .environmentObject(store)
                 .environmentObject(tracker)
                 .environmentObject(engine)
+                .environmentObject(updater)
                 .frame(minWidth: 900, minHeight: 600)
+                .task { updater.start() }
         }
         .defaultSize(width: 1180, height: 800)
 
@@ -35,6 +38,7 @@ struct TimeTrackerApp: App {
                 .environmentObject(store)
                 .environmentObject(tracker)
                 .environmentObject(engine)
+                .environmentObject(updater)
         } label: {
             Image(systemName: tracker.isPaused ? "pause.circle" : "clock")
         }
@@ -46,7 +50,7 @@ enum Pane: String, Hashable {
 }
 
 /// Numer wersji pokazywany w panelu bocznym — pozwala sprawdzić, czy działa najnowsza kompilacja.
-let APP_BUILD = "2.0 · build 5"
+let APP_BUILD = "2.0 · build 6"
 
 /// Główne okno: własny panel boczny (przyciski) + widok sekcji.
 /// Bez NavigationSplitView i zaznaczania List — w poprzednich wersjach kliknięcia nie przełączały widoku.
@@ -179,6 +183,7 @@ struct SidebarRow: View {
 struct MenuBarContent: View {
     @EnvironmentObject var tracker: Tracker
     @EnvironmentObject var engine: Engine
+    @EnvironmentObject var updater: Updater
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -196,6 +201,11 @@ struct MenuBarContent: View {
             NSApp.activate(ignoringOtherApps: true)
         }
         Button("Przelicz wpisy teraz") { engine.refresh(dayKey(Date())) }
+        if updater.updateAvailable {
+            Button("Zainstaluj aktualizację…") { updater.install() }
+        } else {
+            Button("Sprawdź aktualizacje") { Task { await updater.check() } }
+        }
         Divider()
         if tracker.isPaused {
             Button("Wznów śledzenie") { tracker.pause(until: nil) }
