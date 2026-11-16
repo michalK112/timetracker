@@ -48,8 +48,7 @@ if [ "$STABLE" = 0 ]; then
   echo "Ustawieniach systemowych → Prywatność i ochrona → Dostępność, a potem uruchom aplikację ponownie."
   echo
   echo "Żeby nie robić tego po każdej kompilacji, utwórz raz certyfikat do podpisu:"
-  echo "  Dostęp do pęku kluczy → menu Dostęp do pęku kluczy → Asystent certyfikatów → Utwórz certyfikat…"
-  echo "  Nazwa: TimeTracker Local · Typ tożsamości: Główny z podpisem własnym · Typ certyfikatu: Podpisywanie kodu"
+  echo "  bash \"$DIR/create-cert.sh\""
   echo "Następne kompilacje podpiszą się nim automatycznie i macOS zapamięta uprawnienia."
 fi
 echo "W aplikacji: Ustawienia → System → włącz „Uruchamiaj przy logowaniu”."
