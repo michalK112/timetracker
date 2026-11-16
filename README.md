@@ -13,7 +13,7 @@ z czasem na projekt i listą zadań. Podsumowania wpisów pisze Claude.
 | `TimeTrackerApp/` | **Wersja 2 (aktualna)** — samodzielna aplikacja SwiftUI: okno z kalendarzem, projektami, raportami i ustawieniami + pasek menu. Podsumowania przez Claude API. |
 | `v1/app/` | Wersja 1 — tracker w pasku menu (Swift, jeden plik), zapisuje aktywność do `~/Documents/TimeTracker/exports`. |
 | `v1/bin/` | Wersja 1 — instalator, deinstalator i `summarize.py` (podział dnia na wpisy). |
-| `v1/panel/` | Wersja 1 — panel HTML (artifact na claude.ai) z kalendarzem, projektami i raportami. |
+| Panel (wersja 1) | Panel HTML z kalendarzem, projektami i raportami działa jako artifact na claude.ai: https://claude.ai/artifact/Q9xCMNf12pyoBrdy4xC5vk (prywatny). Jego kod nie jest w repozytorium. |
 
 ## Uruchomienie wersji 2
 
